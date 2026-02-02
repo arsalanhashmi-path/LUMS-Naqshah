@@ -10,8 +10,8 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
-// Path to campus.json (in the sibling campus-map folder)
-const DATA_FILE = path.join(__dirname, '../campus-map/src/campus.json');
+// Path to campus.json (in backend folder)
+const DATA_FILE = path.join(__dirname, 'campus.json');
 
 // GET: Read data
 app.get('/api/campus', (req, res) => {
