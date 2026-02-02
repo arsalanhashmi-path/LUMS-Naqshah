@@ -1,5 +1,28 @@
 import React, { useState, useEffect } from "react";
 import { glassPanel, glassButton, glassInput } from "./theme";
+import {
+  BookOpen,
+  Briefcase,
+  FlaskConical,
+  MessageSquare,
+  User,
+  Utensils,
+  Bath,
+  CreditCard,
+  Bed,
+  Moon,
+  DoorOpen,
+  ScanLine,
+  Box,
+  Anchor,
+  Pencil,
+  Save,
+  X,
+  Undo,
+  Check,
+  Trash2,
+  ArrowUpCircle,
+} from "lucide-react";
 
 export default function FloorplanEditor({
   building,
@@ -33,24 +56,28 @@ export default function FloorplanEditor({
 
   const roomCategories = {
     "Learning & Work": [
-      { value: "classroom", label: "📚 Classroom" },
-      { value: "office", label: "💼 Office" },
-      { value: "lab", label: "🔬 Lab" },
-      { value: "discussion_room", label: "💬 Discussion" },
-      { value: "ta_room", label: "🧑‍🏫 TA Room" },
+      { value: "classroom", label: "Classroom", icon: <BookOpen size={16} /> },
+      { value: "office", label: "Office", icon: <Briefcase size={16} /> },
+      { value: "lab", label: "Lab", icon: <FlaskConical size={16} /> },
+      {
+        value: "discussion_room",
+        label: "Discussion",
+        icon: <MessageSquare size={16} />,
+      },
+      { value: "ta_room", label: "TA Room", icon: <User size={16} /> },
     ],
     Amenities: [
-      { value: "eatery", label: "🍔 Eatery" },
-      { value: "bathroom", label: "🚻 Bathroom" },
-      { value: "atm", label: "🏧 ATM" },
-      { value: "hostel_room", label: "🛏️ Hostel" },
-      { value: "prayer_room", label: "🕌 Prayer" },
+      { value: "eatery", label: "Eatery", icon: <Utensils size={16} /> },
+      { value: "bathroom", label: "Bathroom", icon: <Bath size={16} /> },
+      { value: "atm", label: "ATM", icon: <CreditCard size={16} /> },
+      { value: "hostel_room", label: "Hostel", icon: <Bed size={16} /> },
+      { value: "prayer_room", label: "Prayer", icon: <Moon size={16} /> },
     ],
     Infrastructure: [
-      { value: "corridor", label: "🚪 Corridor" },
-      { value: "stairs", label: "🪜 Stairs" }, // Use specific stairs tool later?
-      { value: "lift", label: "🛗 Lift" },
-      { value: "room", label: "📦 Generic" },
+      { value: "corridor", label: "Corridor", icon: <DoorOpen size={16} /> },
+      { value: "stairs", label: "Stairs", icon: <ArrowUpCircle size={16} /> },
+      { value: "lift", label: "Lift", icon: <ScanLine size={16} /> },
+      { value: "room", label: "Generic", icon: <Box size={16} /> },
     ],
   };
 
@@ -322,7 +349,8 @@ export default function FloorplanEditor({
             whiteSpace: "nowrap",
           }}
         >
-          ✏️ {building?.properties?.name || "Building"}
+          <Pencil size={18} className="text-primary" />{" "}
+          {building?.properties?.name || "Building"}
         </h3>
         <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
           {floors.map((f) => (
@@ -354,9 +382,12 @@ export default function FloorplanEditor({
                   ...glassButton(theme, "blue"),
                   padding: isMobile ? "8px 14px" : "10px 20px",
                   fontSize: isMobile ? "12px" : "14px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
                 }}
               >
-                💾 Save
+                <Save size={16} /> Save
               </button>
             )}
             <button
@@ -365,9 +396,12 @@ export default function FloorplanEditor({
                 ...glassButton(theme, "danger"),
                 padding: isMobile ? "8px 14px" : "10px 20px",
                 fontSize: isMobile ? "12px" : "14px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
               }}
             >
-              ✕ Close
+              <X size={16} /> Close
             </button>
           </div>
         )}
@@ -416,9 +450,15 @@ export default function FloorplanEditor({
               setDrawingPoints((p) => p.slice(0, -1));
             }}
             disabled={drawingPoints.length === 0}
-            style={{ ...glassButton(theme, "default"), padding: "12px" }}
+            style={{
+              ...glassButton(theme, "default"),
+              padding: "12px",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
           >
-            ↩️ Undo
+            <Undo size={18} /> Undo
           </button>
 
           <button
@@ -427,16 +467,28 @@ export default function FloorplanEditor({
               else alert("Need 3 points!");
             }}
             disabled={drawingPoints.length < 3}
-            style={{ ...glassButton(theme, "success"), padding: "12px 24px" }}
+            style={{
+              ...glassButton(theme, "success"),
+              padding: "12px 24px",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
           >
-            ✅ Finish Shape
+            <Check size={18} /> Finish
           </button>
 
           <button
             onClick={cancelDrawing}
-            style={{ ...glassButton(theme, "danger"), padding: "12px" }}
+            style={{
+              ...glassButton(theme, "danger"),
+              padding: "12px",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
           >
-            ✕ Cancel
+            <X size={18} /> Cancel
           </button>
         </div>
       )}
@@ -465,8 +517,16 @@ export default function FloorplanEditor({
               boxShadow: "0 20px 50px rgba(0,0,0,0.3)",
             }}
           >
-            <h3 style={{ marginTop: 0, color: theme.accent }}>
-              📍 Room Details
+            <h3
+              style={{
+                marginTop: 0,
+                color: theme.accent,
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
+              <Anchor size={20} /> Room Details
             </h3>
 
             <label
@@ -622,7 +682,7 @@ export default function FloorplanEditor({
                 marginBottom: "20px",
               }}
             >
-              ✏️ Draw New Room
+              <Pencil size={16} style={{ marginRight: "8px" }} /> Draw New Room
             </button>
           )}
 
@@ -709,7 +769,7 @@ export default function FloorplanEditor({
                       fontSize: "18px",
                     }}
                   >
-                    🗑️
+                    <Trash2 size={18} />
                   </button>
                 )}
               </div>

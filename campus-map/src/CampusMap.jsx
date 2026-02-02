@@ -6,6 +6,29 @@ import { buildGraph, findRoute } from "./pathfinding";
 import FloorplanEditor from "./FloorplanEditor";
 import { themes, glassPanel, glassButton, glassInput } from "./theme";
 import lumsLogo from "./lums-logo.png";
+import {
+  Settings,
+  Compass,
+  Map as MapIcon,
+  X,
+  ArrowRight,
+  Check,
+  Building2,
+  Eye,
+  Save,
+  Trash2,
+  Plus,
+  Minus,
+  Lock,
+  Unlock,
+  Moon,
+  Sun,
+  Navigation,
+  Pencil,
+  ChevronDown,
+  ChevronUp,
+  Box,
+} from "lucide-react";
 
 // LUMS Brand Colors
 const LUMS_BLUE = "#1e3a8a";
@@ -169,14 +192,14 @@ export default function CampusMap() {
         body: JSON.stringify(geoJsonData),
       });
       if (res.ok) {
-        alert("✅ Campus data saved to server!");
+        alert("Campus data saved to server!");
       } else {
-        alert("❌ Failed to save data. Check console.");
+        alert("Failed to save data. Check console.");
         console.error(await res.text());
       }
     } catch (err) {
       console.error(err);
-      alert("❌ Error saving data.");
+      alert("Error saving data.");
     }
   };
 
@@ -639,7 +662,8 @@ export default function CampusMap() {
               transition: "all 0.2s",
             }}
           >
-            {isAdminMode ? "🔓 Admin" : "🔒 Viewer"}
+            {isAdminMode ? <Unlock size={16} /> : <Lock size={16} />}
+            {isAdminMode ? "Admin" : "Viewer"}
           </button>
           <button
             onClick={() => setIsDarkMode(!isDarkMode)}
@@ -657,7 +681,7 @@ export default function CampusMap() {
               gap: "6px",
             }}
           >
-            {isDarkMode ? "🌙" : "☀️"}
+            {isDarkMode ? <Moon size={16} /> : <Sun size={16} />}
             {!isMobile && (isDarkMode ? "Dark" : "Light")}
           </button>
         </div>
@@ -677,7 +701,7 @@ export default function CampusMap() {
           }}
         >
           <button onClick={() => setActivePanel("controls")} style={fabStyle}>
-            ⚙️
+            <Settings size={24} />
           </button>
           <button
             onClick={() => setActivePanel("nav")}
@@ -687,7 +711,7 @@ export default function CampusMap() {
               color: "#fff",
             }}
           >
-            🧭
+            <Compass size={24} />
           </button>
         </div>
       )}
@@ -711,9 +735,12 @@ export default function CampusMap() {
                 textTransform: "uppercase",
                 letterSpacing: "2px",
                 fontWeight: "700",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
               }}
             >
-              🗺️ Navigation
+              <MapIcon size={18} /> Navigation
             </h3>
             <button
               onClick={() => setActivePanel(null)}
@@ -723,9 +750,11 @@ export default function CampusMap() {
                 color: theme.textMuted,
                 fontSize: "28px",
                 cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
               }}
             >
-              ×
+              <X size={24} />
             </button>
           </div>
           <div
@@ -770,15 +799,31 @@ export default function CampusMap() {
                   flex: 1,
                   padding: "16px",
                   backgroundColor: theme.accentSecondary,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
                 }}
               >
-                {isNavigating ? "..." : "GO 🚀"}
+                {isNavigating ? (
+                  "..."
+                ) : (
+                  <>
+                    GO <ArrowRight size={16} />
+                  </>
+                )}
               </button>
               <button
                 onClick={resetNavigation}
-                style={{ ...glassButton(theme, "default"), padding: "16px" }}
+                style={{
+                  ...glassButton(theme, "default"),
+                  padding: "16px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
             {routeGeoJSON && (
@@ -789,9 +834,13 @@ export default function CampusMap() {
                   borderRadius: "14px",
                   fontSize: "13px",
                   color: theme.accentSecondary,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
                 }}
               >
-                ✓ {routeGeoJSON.properties.from} → {routeGeoJSON.properties.to}
+                <Check size={14} /> {routeGeoJSON.properties.from} →{" "}
+                {routeGeoJSON.properties.to}
               </div>
             )}
           </div>
@@ -1023,15 +1072,27 @@ export default function CampusMap() {
               <>
                 <button
                   onClick={handleSave}
-                  style={{ ...glassButton(theme, "blue"), padding: "14px" }}
+                  style={{
+                    ...glassButton(theme, "blue"),
+                    padding: "14px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
                 >
-                  💾
+                  <Save size={20} />
                 </button>
                 <button
                   onClick={deleteBuilding}
-                  style={{ ...glassButton(theme, "danger"), padding: "14px" }}
+                  style={{
+                    ...glassButton(theme, "danger"),
+                    padding: "14px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
                 >
-                  🗑️
+                  <Trash2 size={20} />
                 </button>
               </>
             )}
@@ -1152,10 +1213,12 @@ export default function CampusMap() {
                         border: "none",
                         backgroundColor: theme.danger,
                         color: "#fff",
-                        fontSize: "24px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
                       }}
                     >
-                      −
+                      <Minus size={24} />
                     </button>
                   )}
                   <span
@@ -1184,10 +1247,12 @@ export default function CampusMap() {
                         border: "none",
                         backgroundColor: theme.success,
                         color: "#fff",
-                        fontSize: "24px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
                       }}
                     >
-                      +
+                      <Plus size={24} />
                     </button>
                   )}
                 </div>
@@ -1239,10 +1304,12 @@ export default function CampusMap() {
                           border: "none",
                           backgroundColor: theme.danger,
                           color: "#fff",
-                          fontSize: "18px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
                         }}
                       >
-                        −
+                        <Minus size={18} />
                       </button>
                       <span
                         style={{
@@ -1274,10 +1341,12 @@ export default function CampusMap() {
                           border: "none",
                           backgroundColor: theme.success,
                           color: "#fff",
-                          fontSize: "18px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
                         }}
                       >
-                        +
+                        <Plus size={18} />
                       </button>
                     </div>
                   </div>
@@ -1289,23 +1358,52 @@ export default function CampusMap() {
                 >
                   <button
                     onClick={handleSave}
-                    style={{ ...glassButton(theme, "blue"), flex: 1 }}
+                    style={{
+                      ...glassButton(theme, "blue"),
+                      flex: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "8px",
+                    }}
                   >
-                    💾 Save
+                    <Save size={16} /> Save
                   </button>
                   <button
                     onClick={deleteBuilding}
-                    style={{ ...glassButton(theme, "danger"), flex: 1 }}
+                    style={{
+                      ...glassButton(theme, "danger"),
+                      flex: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "8px",
+                    }}
                   >
-                    🗑️ Delete
+                    <Trash2 size={16} /> Delete
                   </button>
                 </div>
               )}
               <button
                 onClick={() => setIsEditingFloorplan(true)}
-                style={{ ...glassButton(theme, "purple"), width: "100%" }}
+                style={{
+                  ...glassButton(theme, "purple"),
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                }}
               >
-                {isAdminMode ? "✏️ Edit Floorplan" : "👁️ View Floorplan"}
+                {isAdminMode ? (
+                  <>
+                    <Pencil size={16} /> Edit Floorplan
+                  </>
+                ) : (
+                  <>
+                    <Eye size={16} /> View Floorplan
+                  </>
+                )}
               </button>
             </div>
           )}
@@ -1436,9 +1534,12 @@ export default function CampusMap() {
                   color: theme.accent,
                   cursor: "pointer",
                   fontWeight: "bold",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
-                N
+                <Compass size={20} />
               </button>
               <button
                 onClick={() =>
@@ -1457,9 +1558,12 @@ export default function CampusMap() {
                   color: theme.text,
                   cursor: "pointer",
                   fontWeight: "bold",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
-                3D
+                <Box size={20} />
               </button>
             </div>
             <div style={{ ...glassPanel(theme), padding: "16px" }}>
