@@ -266,10 +266,17 @@ export default function CampusMap() {
       style: {
         version: 8,
         sources: {
-          "osm-base": {
+          "osm-base-light": {
             type: "raster",
             tiles: [
               "https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+            ],
+            tileSize: 256,
+          },
+          "osm-base-dark": {
+            type: "raster",
+            tiles: [
+              "https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
             ],
             tileSize: 256,
           },
@@ -282,11 +289,24 @@ export default function CampusMap() {
         },
         layers: [
           {
-            id: "osm-tiles",
+            id: "osm-tiles-light",
             type: "raster",
-            source: "osm-base",
+            source: "osm-base-light",
             minzoom: 0,
             maxzoom: 19,
+            layout: {
+              visibility: "visible",
+            },
+          },
+          {
+            id: "osm-tiles-dark",
+            type: "raster",
+            source: "osm-base-dark",
+            minzoom: 0,
+            maxzoom: 19,
+            layout: {
+              visibility: "none",
+            },
           },
           {
             id: "mask-layer",
@@ -476,6 +496,37 @@ export default function CampusMap() {
         ["==", "level", currentLevel],
       ]);
   }, [currentLevel]);
+
+  // --- THEME TOGGLE EFFECT ---
+  useEffect(() => {
+    if (!map.current) return;
+    const style = map.current.getStyle();
+    if (!style) return;
+
+    if (
+      map.current.getLayer("osm-tiles-light") &&
+      map.current.getLayer("osm-tiles-dark")
+    ) {
+      map.current.setLayoutProperty(
+        "osm-tiles-light",
+        "visibility",
+        isDarkMode ? "none" : "visible",
+      );
+      map.current.setLayoutProperty(
+        "osm-tiles-dark",
+        "visibility",
+        isDarkMode ? "visible" : "none",
+      );
+    }
+
+    if (map.current.getLayer("mask-layer")) {
+      map.current.setPaintProperty(
+        "mask-layer",
+        "fill-color",
+        isDarkMode ? "#0f172a" : "#f8fafc",
+      );
+    }
+  }, [isDarkMode]);
 
   // --- STYLES ---
   const panelBase = {

@@ -45,7 +45,7 @@ export default function Navbar({
       {/* Search Bar */}
       <div className="relative flex-1 max-w-[400px] mx-5">
         <div
-          className={`flex items-center bg-slate-100 dark:bg-white/10 rounded-full px-4 py-2 border transition-all ${
+          className={`flex items-center bg-slate-100 dark:bg-white/10 rounded-xl px-4 py-2 border transition-all ${
             isSearchFocused
               ? "border-primary ring-1 ring-primary"
               : "border-transparent"
