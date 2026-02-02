@@ -1,56 +1,103 @@
 const express = require('express');
 const cors = require('cors');
-const fs = require('fs');
-const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 // Enable CORS and JSON body parsing
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
-// Path to campus.json (in backend folder)
-const DATA_FILE = path.join(__dirname, 'campus.json');
+// Supabase configuration
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role key for storage write access
+const BUCKET_NAME = process.env.SUPABASE_BUCKET || 'campus-data';
+const FILE_NAME = 'campus.json';
 
-// GET: Read data
-app.get('/api/campus', (req, res) => {
-  fs.readFile(DATA_FILE, 'utf8', (err, data) => {
-    if (err) {
-      console.error('Error reading file:', err);
-      return res.status(500).json({ error: 'Failed to read data' });
+// Initialize Supabase client
+const supabase = SUPABASE_URL && SUPABASE_KEY 
+  ? createClient(SUPABASE_URL, SUPABASE_KEY)
+  : null;
+
+// GET: Read data from Supabase storage
+app.get('/api/campus', async (req, res) => {
+  try {
+    if (!supabase) {
+      // Fallback to local file for development
+      const fs = require('fs');
+      const path = require('path');
+      const DATA_FILE = path.join(__dirname, 'campus.json');
+      const data = fs.readFileSync(DATA_FILE, 'utf8');
+      return res.json(JSON.parse(data));
     }
-    try {
-      res.json(JSON.parse(data));
-    } catch (parseErr) {
-      console.error('Error parsing JSON:', parseErr);
-      res.status(500).json({ error: 'Invalid JSON data' });
+
+    // Download from Supabase storage
+    const { data, error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .download(FILE_NAME);
+
+    if (error) {
+      console.error('Supabase download error:', error);
+      return res.status(500).json({ error: 'Failed to read data from storage' });
     }
-  });
+
+    const text = await data.text();
+    res.json(JSON.parse(text));
+  } catch (err) {
+    console.error('Error reading campus data:', err);
+    res.status(500).json({ error: 'Failed to read data' });
+  }
 });
 
-// POST: Write data
-app.post('/api/campus', (req, res) => {
+// POST: Write data to Supabase storage
+app.post('/api/campus', async (req, res) => {
   const newData = req.body;
-  
-  // Basic validation to ensure we don't wipe the file with empty data
+
+  // Basic validation
   if (!newData || !newData.type || !Array.isArray(newData.features)) {
-     return res.status(400).json({ error: 'Invalid GeoJSON structure' });
+    return res.status(400).json({ error: 'Invalid GeoJSON structure' });
   }
 
-  const jsonString = JSON.stringify(newData, null, 2);
+  try {
+    const jsonString = JSON.stringify(newData, null, 2);
 
-  fs.writeFile(DATA_FILE, jsonString, 'utf8', (err) => {
-    if (err) {
-      console.error('Error writing file:', err);
-      return res.status(500).json({ error: 'Failed to save data' });
+    if (!supabase) {
+      // Fallback to local file for development
+      const fs = require('fs');
+      const path = require('path');
+      const DATA_FILE = path.join(__dirname, 'campus.json');
+      fs.writeFileSync(DATA_FILE, jsonString, 'utf8');
+      console.log('Campus data saved locally.');
+      return res.json({ success: true, message: 'Data saved locally' });
     }
-    console.log('Campus data saved successfully.');
-    res.json({ success: true, message: 'Data saved' });
-  });
+
+    // Upload to Supabase storage (upsert)
+    const { error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(FILE_NAME, jsonString, {
+        contentType: 'application/json',
+        upsert: true,
+      });
+
+    if (error) {
+      console.error('Supabase upload error:', error);
+      return res.status(500).json({ error: 'Failed to save data to storage' });
+    }
+
+    console.log('Campus data saved to Supabase.');
+    res.json({ success: true, message: 'Data saved to Supabase' });
+  } catch (err) {
+    console.error('Error saving campus data:', err);
+    res.status(500).json({ error: 'Failed to save data' });
+  }
 });
 
 app.listen(PORT, () => {
   console.log(`Backend server running on http://localhost:${PORT}`);
-  console.log(`Watching file: ${DATA_FILE}`);
+  if (supabase) {
+    console.log(`Connected to Supabase bucket: ${BUCKET_NAME}`);
+  } else {
+    console.log('Running in local mode (no Supabase credentials)');
+  }
 });

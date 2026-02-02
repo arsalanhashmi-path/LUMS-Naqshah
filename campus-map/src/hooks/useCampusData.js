@@ -1,5 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 
+// API base URL - uses environment variable in production, proxy in dev
+const API_BASE = import.meta.env.VITE_API_URL || "";
+
 export function useCampusData(mapRef) {
   const [geoJsonData, setGeoJsonData] = useState({
     type: "FeatureCollection",
@@ -9,7 +12,7 @@ export function useCampusData(mapRef) {
 
   // --- API FETCH ---
   useEffect(() => {
-    fetch("/api/campus")
+    fetch(`${API_BASE}/api/campus`)
       .then((res) => res.json())
       .then((data) => {
         setGeoJsonData(data);
@@ -150,7 +153,7 @@ export function useCampusData(mapRef) {
 
   const handleSave = async () => {
     try {
-      const res = await fetch("/api/campus", {
+      const res = await fetch(`${API_BASE}/api/campus`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(geoJsonData),
