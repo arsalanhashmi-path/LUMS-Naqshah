@@ -125,8 +125,8 @@ export default function BuildingPanel({
         )}
 
         <Button
-          variant="purple"
-          className="w-full"
+          variant={isAdminMode ? "purple" : "outline"}
+          className="w-full gap-2"
           onClick={() => setIsEditingFloorplan(true)}
         >
           {isAdminMode ? (
@@ -135,10 +135,7 @@ export default function BuildingPanel({
               Edit Floorplan
             </>
           ) : (
-            <>
-              <Eye className="h-4 w-4" />
-              View Floorplan
-            </>
+            "View Floorplan"
           )}
         </Button>
       </CardContent>

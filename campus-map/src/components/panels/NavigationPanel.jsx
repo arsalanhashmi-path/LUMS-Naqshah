@@ -25,9 +25,7 @@ export default function NavigationPanel({
   onClose,
 }) {
   return (
-    <Card
-      className={`${isDarkMode ? "glass-panel-dark" : "glass-panel"} ${isMobile ? "p-0" : "w-80"}`}
-    >
+    <Card className={`glass-panel border-0 ${isMobile ? "p-0" : "w-80"}`}>
       <CardHeader
         className={`${isMobile ? "pb-4" : "pb-2"} flex flex-row items-center justify-between`}
       >
@@ -51,9 +49,7 @@ export default function NavigationPanel({
           <SelectTrigger className="w-full bg-card/50 border-border">
             <SelectValue placeholder="From..." />
           </SelectTrigger>
-          <SelectContent
-            className={isDarkMode ? "bg-zinc-900 border-zinc-700" : ""}
-          >
+          <SelectContent>
             {availableBuildings.map((f) => (
               <SelectItem
                 key={`s_${f.properties["@id"]}`}
@@ -69,9 +65,7 @@ export default function NavigationPanel({
           <SelectTrigger className="w-full bg-card/50 border-border">
             <SelectValue placeholder="To..." />
           </SelectTrigger>
-          <SelectContent
-            className={isDarkMode ? "bg-zinc-900 border-zinc-700" : ""}
-          >
+          <SelectContent>
             {availableBuildings.map((f) => (
               <SelectItem
                 key={`e_${f.properties["@id"]}`}

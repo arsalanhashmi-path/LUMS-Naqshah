@@ -45,7 +45,7 @@ export default function Navbar({
       {/* Search Bar */}
       <div className="relative flex-1 max-w-[400px] mx-5">
         <div
-          className={`flex items-center bg-slate-100 dark:bg-white/10 rounded-xl px-4 py-2 border transition-all ${
+          className={`flex items-center glass-panel rounded-xl px-4 py-2 border transition-all ${
             isSearchFocused
               ? "border-primary ring-1 ring-primary"
               : "border-transparent"
@@ -96,15 +96,9 @@ export default function Navbar({
                   className="flex items-center gap-2.5 px-4 py-3 border-b border-border cursor-pointer hover:bg-accent/20 transition-colors"
                 >
                   <Building2 className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <div className="font-semibold text-sm text-foreground">
-                      {b.properties.name}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Building •{" "}
-                      {parseInt(b.properties["building:levels"]) || 1} Floors
-                    </div>
-                  </div>
+                  <span className="font-semibold text-sm text-foreground">
+                    {b.properties.name}
+                  </span>
                 </div>
               ))}
               {filteredBuildings.length === 0 && (

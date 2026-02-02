@@ -1,28 +1,33 @@
 import React, { useState, useEffect } from "react";
-import { glassPanel, glassButton, glassInput } from "./theme";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
-  BookOpen,
-  Briefcase,
-  FlaskConical,
-  MessageSquare,
-  User,
   Utensils,
-  Bath,
-  CreditCard,
-  Bed,
-  Moon,
-  DoorOpen,
-  ScanLine,
-  Box,
-  Anchor,
-  Pencil,
+  Briefcase,
+  GraduationCap,
+  ShoppingBag,
+  FlaskConical,
+  MapPin,
   Save,
   X,
-  Undo,
-  Check,
   Trash2,
-  ArrowUpCircle,
+  Plus,
+  Pencil,
 } from "lucide-react";
+
+// POI Categories with icons
+const POI_CATEGORIES = [
+  { value: "eatery", label: "Eatery", icon: Utensils, color: "#f97316" },
+  { value: "office", label: "Office", icon: Briefcase, color: "#3b82f6" },
+  {
+    value: "classroom",
+    label: "Classroom",
+    icon: GraduationCap,
+    color: "#22c55e",
+  },
+  { value: "shop", label: "Shop", icon: ShoppingBag, color: "#a855f7" },
+  { value: "lab", label: "Lab", icon: FlaskConical, color: "#06b6d4" },
+];
 
 export default function FloorplanEditor({
   building,
@@ -36,74 +41,17 @@ export default function FloorplanEditor({
   isAdminMode,
 }) {
   const [currentFloor, setCurrentFloor] = useState(0);
-  const [roomNumber, setRoomNumber] = useState("");
-  const [showRoomForm, setShowRoomForm] = useState(false);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [drawingPoints, setDrawingPoints] = useState([]);
-  const [selectedRoom, setSelectedRoom] = useState(null);
-  const [roomName, setRoomName] = useState("");
-  const [roomType, setRoomType] = useState("room");
+  const [isAddingPoint, setIsAddingPoint] = useState(false);
+  const [pendingPoint, setPendingPoint] = useState(null); // {lng, lat}
+  const [selectedPOI, setSelectedPOI] = useState(null);
 
-  // --- ROOM TYPES CONFIG ---
-  const numberedTypes = [
-    "office",
-    "classroom",
-    "lab",
-    "discussion_room",
-    "ta_room",
-    "hostel_room",
-  ];
-
-  const roomCategories = {
-    "Learning & Work": [
-      { value: "classroom", label: "Classroom", icon: <BookOpen size={16} /> },
-      { value: "office", label: "Office", icon: <Briefcase size={16} /> },
-      { value: "lab", label: "Lab", icon: <FlaskConical size={16} /> },
-      {
-        value: "discussion_room",
-        label: "Discussion",
-        icon: <MessageSquare size={16} />,
-      },
-      { value: "ta_room", label: "TA Room", icon: <User size={16} /> },
-    ],
-    Amenities: [
-      { value: "eatery", label: "Eatery", icon: <Utensils size={16} /> },
-      { value: "bathroom", label: "Bathroom", icon: <Bath size={16} /> },
-      { value: "atm", label: "ATM", icon: <CreditCard size={16} /> },
-      { value: "hostel_room", label: "Hostel", icon: <Bed size={16} /> },
-      { value: "prayer_room", label: "Prayer", icon: <Moon size={16} /> },
-    ],
-    Infrastructure: [
-      { value: "corridor", label: "Corridor", icon: <DoorOpen size={16} /> },
-      { value: "stairs", label: "Stairs", icon: <ArrowUpCircle size={16} /> },
-      { value: "lift", label: "Lift", icon: <ScanLine size={16} /> },
-      { value: "room", label: "Generic", icon: <Box size={16} /> },
-    ],
-  };
-
-  const allRoomTypes = Object.values(roomCategories).flat();
-
-  // --- KEYBOARD SHORTCUTS ---
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (!isDrawing) return;
-      if (e.key === "Escape") {
-        cancelDrawing();
-      } else if (e.key === "Enter") {
-        if (drawingPoints.length >= 3) setShowRoomForm(true);
-      } else if ((e.ctrlKey || e.metaKey) && e.key === "z") {
-        setDrawingPoints((prev) => prev.slice(0, -1));
-      } else if (e.key === "Backspace") {
-        // Optional: Backspace to undo, but check if input is focused!
-        // Simple check: document.activeElement
-        if (document.activeElement.tagName !== "INPUT") {
-          setDrawingPoints((prev) => prev.slice(0, -1));
-        }
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isDrawing, drawingPoints]);
+  // POI Form State
+  const [poiCategory, setPoiCategory] = useState("classroom");
+  const [poiRoomNumber, setPoiRoomNumber] = useState("");
+  const [poiRoomName, setPoiRoomName] = useState("");
+  const [poiPerson, setPoiPerson] = useState("");
+  const [poiTiming, setPoiTiming] = useState("");
+  const [poiAliases, setPoiAliases] = useState("");
 
   const buildingId = building?.properties?.["@id"];
   const totalFloors = parseInt(building?.properties?.["building:levels"]) || 1;
@@ -117,8 +65,11 @@ export default function FloorplanEditor({
   for (let i = minLevel; i <= maxLevel; i++) {
     floors.push(i);
   }
-  const buildingRooms = geoJsonData.features.filter(
+
+  // Filter POIs for this building and floor
+  const buildingPOIs = geoJsonData.features.filter(
     (f) =>
+      f.properties?.poi === true &&
       f.properties?.building_ref === buildingId &&
       f.properties?.level === currentFloor,
   );
@@ -138,167 +89,171 @@ export default function FloorplanEditor({
     }
   }, [building, mapRef]);
 
-  // Map clicks for drawing
+  // Map click handler for adding points
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
+
     const handleClick = (e) => {
-      if (isDrawing && !showRoomForm)
-        setDrawingPoints((prev) => [...prev, [e.lngLat.lng, e.lngLat.lat]]);
+      if (isAddingPoint) {
+        setPendingPoint({ lng: e.lngLat.lng, lat: e.lngLat.lat });
+        setIsAddingPoint(false);
+      }
     };
+
     map.on("click", handleClick);
     return () => map.off("click", handleClick);
-  }, [isDrawing, showRoomForm, mapRef]);
+  }, [isAddingPoint, mapRef]);
 
-  // Drawing Preview Layers
+  // POI Marker Layer
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    if (!map.getSource("drawing-preview")) {
-      map.addSource("drawing-preview", {
+
+    // Add source if doesn't exist
+    if (!map.getSource("poi-markers")) {
+      map.addSource("poi-markers", {
         type: "geojson",
         data: { type: "FeatureCollection", features: [] },
       });
-      map.addLayer({
-        id: "drawing-preview-fill",
-        type: "fill",
-        source: "drawing-preview",
-        paint: { "fill-color": theme.accent, "fill-opacity": 0.3 },
-      });
-      map.addLayer({
-        id: "drawing-preview-line",
-        type: "line",
-        source: "drawing-preview",
-        paint: {
-          "line-color": theme.accent,
-          "line-width": 2,
-          "line-dasharray": [2, 2],
-        },
-      });
-      map.addLayer({
-        id: "drawing-preview-points",
-        type: "circle",
-        source: "drawing-preview",
-        paint: { "circle-radius": 6, "circle-color": theme.accentSecondary },
-      });
-    }
-    const features = [];
-    drawingPoints.forEach((pt) =>
-      features.push({
-        type: "Feature",
-        geometry: { type: "Point", coordinates: pt },
-      }),
-    );
-    if (drawingPoints.length >= 2) {
-      features.push({
-        type: "Feature",
-        geometry: {
-          type: "LineString",
-          coordinates: [...drawingPoints, drawingPoints[0]],
-        },
-      });
-    }
-    if (drawingPoints.length >= 3)
-      features.push({
-        type: "Feature",
-        geometry: {
-          type: "Polygon",
-          coordinates: [[...drawingPoints, drawingPoints[0]]],
-        },
-      });
-    map
-      .getSource("drawing-preview")
-      ?.setData({ type: "FeatureCollection", features });
-  }, [drawingPoints, mapRef, theme]);
 
-  // Cleanup effect
+      map.addLayer({
+        id: "poi-markers-circle",
+        type: "circle",
+        source: "poi-markers",
+        paint: {
+          "circle-radius": 12,
+          "circle-color": ["get", "color"],
+          "circle-stroke-width": 3,
+          "circle-stroke-color": "#ffffff",
+        },
+      });
+
+      map.addLayer({
+        id: "poi-markers-label",
+        type: "symbol",
+        source: "poi-markers",
+        layout: {
+          "text-field": ["get", "label"],
+          "text-size": 10,
+          "text-offset": [0, 2],
+          "text-anchor": "top",
+        },
+        paint: {
+          "text-color": theme?.text || "#333",
+          "text-halo-color": "#fff",
+          "text-halo-width": 1,
+        },
+      });
+    }
+
+    // Update source data
+    const poiFeatures = buildingPOIs.map((poi) => {
+      const cat = POI_CATEGORIES.find(
+        (c) => c.value === poi.properties.category,
+      );
+      return {
+        type: "Feature",
+        geometry: poi.geometry,
+        properties: {
+          color: cat?.color || "#888",
+          label: poi.properties.room_number || poi.properties.room_name || "",
+        },
+      };
+    });
+
+    map.getSource("poi-markers")?.setData({
+      type: "FeatureCollection",
+      features: poiFeatures,
+    });
+  }, [buildingPOIs, mapRef, theme]);
+
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       const map = mapRef.current;
       if (map) {
-        [
-          "drawing-preview-fill",
-          "drawing-preview-line",
-          "drawing-preview-points",
-        ].forEach((id) => {
+        ["poi-markers-circle", "poi-markers-label"].forEach((id) => {
           if (map.getLayer(id)) map.removeLayer(id);
         });
-        if (map.getSource("drawing-preview"))
-          map.removeSource("drawing-preview");
+        if (map.getSource("poi-markers")) map.removeSource("poi-markers");
       }
     };
   }, [mapRef]);
 
-  const startDrawing = () => {
-    setIsDrawing(true);
-    setDrawingPoints([]);
-    setSelectedRoom(null);
-    setShowRoomForm(false);
+  const resetForm = () => {
+    setPoiCategory("classroom");
+    setPoiRoomNumber("");
+    setPoiRoomName("");
+    setPoiPerson("");
+    setPoiTiming("");
+    setPoiAliases("");
+    setPendingPoint(null);
+    setSelectedPOI(null);
   };
-  const cancelDrawing = () => {
-    setIsDrawing(false);
-    setDrawingPoints([]);
-    setShowRoomForm(false);
-  };
-  const finishDrawing = () => {
-    if (drawingPoints.length < 3) return alert("Need at least 3 points");
 
-    // Construct Name
-    let finalName = roomName;
-    if (roomNumber && numberedTypes.includes(roomType)) {
-      finalName = `${roomNumber}`; // E.g. "302"
-      // Should we append type? User can type "Lab 302" if they want, or we just store number.
-    } else if (!finalName) {
-      // Auto-name if empty
-      const label =
-        allRoomTypes.find((t) => t.value === roomType)?.label || "Room";
-      finalName = `${label} ${buildingRooms.length + 1}`;
-    }
+  const savePOI = () => {
+    if (!pendingPoint && !selectedPOI) return;
 
-    setGeoJsonData((prev) => ({
-      ...prev,
-      features: [
-        ...prev.features,
-        {
-          type: "Feature",
-          properties: {
-            "@id": `room/${Date.now()}`,
-            level: currentFloor,
-            room: roomType,
-            room_number: roomNumber, // NEW FIELD
-            name: finalName,
-            building_ref: buildingId,
-            amenity: roomCategories["Amenities"].some(
-              (a) => a.value === roomType,
-            )
-              ? roomType
-              : undefined,
-          },
-          geometry: {
-            type: "Polygon",
-            coordinates: [[...drawingPoints, drawingPoints[0]]],
-          },
-        },
-      ],
-    }));
-    setIsDrawing(false);
-    setDrawingPoints([]);
-    setRoomName("");
-    setRoomNumber("");
-    setRoomType("room");
-    setShowRoomForm(false);
+    const aliasArray = poiAliases
+      .split(",")
+      .map((a) => a.trim())
+      .filter(Boolean);
+
+    const poiData = {
+      type: "Feature",
+      geometry: {
+        type: "Point",
+        coordinates: pendingPoint
+          ? [pendingPoint.lng, pendingPoint.lat]
+          : selectedPOI.geometry.coordinates,
+      },
+      properties: {
+        "@id": selectedPOI?.properties?.["@id"] || `poi_${Date.now()}`,
+        poi: true,
+        building_ref: buildingId,
+        level: currentFloor,
+        category: poiCategory,
+        room_number: poiRoomNumber,
+        room_name: poiRoomName,
+        person: poiPerson,
+        timing: poiTiming,
+        aliases: aliasArray,
+      },
+    };
+
+    setGeoJsonData((prev) => {
+      const filtered = prev.features.filter(
+        (f) => f.properties?.["@id"] !== poiData.properties["@id"],
+      );
+      return { ...prev, features: [...filtered, poiData] };
+    });
+
+    resetForm();
   };
-  const deleteRoom = (roomId) => {
-    if (window.confirm("Delete room?")) {
+
+  const deletePOI = (poiId) => {
+    if (window.confirm("Delete this point?")) {
       setGeoJsonData((prev) => ({
         ...prev,
-        features: prev.features.filter((f) => f.properties?.["@id"] !== roomId),
+        features: prev.features.filter((f) => f.properties?.["@id"] !== poiId),
       }));
-      setSelectedRoom(null);
+      resetForm();
     }
   };
+
+  const editPOI = (poi) => {
+    setSelectedPOI(poi);
+    setPoiCategory(poi.properties.category || "classroom");
+    setPoiRoomNumber(poi.properties.room_number || "");
+    setPoiRoomName(poi.properties.room_name || "");
+    setPoiPerson(poi.properties.person || "");
+    setPoiTiming(poi.properties.timing || "");
+    setPoiAliases((poi.properties.aliases || []).join(", "));
+  };
+
   const handleClose = () => {
-    cancelDrawing();
+    resetForm();
     if (mapRef.current)
       mapRef.current.easeTo({
         pitch: 60,
@@ -309,9 +264,10 @@ export default function FloorplanEditor({
     onClose();
   };
 
-  const panelStyle = {
-    ...glassPanel(theme),
-    padding: isMobile ? "16px" : "20px",
+  const CategoryIcon = ({ category, size = 16 }) => {
+    const cat = POI_CATEGORIES.find((c) => c.value === category);
+    const IconComp = cat?.icon || MapPin;
+    return <IconComp size={size} style={{ color: cat?.color }} />;
   };
 
   return (
@@ -323,33 +279,12 @@ export default function FloorplanEditor({
         zIndex: 100,
       }}
     >
-      {/* --- FLOATING TOOLBAR (Top for Nav/Floors) --- */}
+      {/* --- FLOATING TOOLBAR --- */}
       <div
-        style={{
-          position: "absolute",
-          top: isMobile ? "16px" : "20px",
-          left: "50%",
-          transform: "translateX(-50%)",
-          ...panelStyle,
-          display: "flex",
-          alignItems: "center",
-          gap: isMobile ? "12px" : "20px",
-          pointerEvents: "auto",
-          flexWrap: "wrap",
-          justifyContent: "center",
-          maxWidth: isMobile ? "90%" : "auto",
-        }}
+        className={`absolute top-[80px] right-4 md:right-8 glass-panel flex items-center gap-6 pointer-events-auto flex-wrap justify-end max-w-[90%] z-[100] p-4 md:p-6`}
       >
-        <h3
-          style={{
-            margin: 0,
-            fontSize: isMobile ? "14px" : "16px",
-            color: theme.text,
-            fontWeight: "700",
-            whiteSpace: "nowrap",
-          }}
-        >
-          <Pencil size={18} className="text-primary" />{" "}
+        <h3 className="m-0 text-base md:text-lg font-bold text-foreground whitespace-nowrap flex items-center gap-2">
+          {isAdminMode && <Pencil size={18} className="text-primary" />}
           {building?.properties?.name || "Building"}
         </h3>
         <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
@@ -357,436 +292,293 @@ export default function FloorplanEditor({
             <button
               key={f}
               onClick={() => setCurrentFloor(f)}
-              style={{
-                padding: isMobile ? "8px 12px" : "8px 14px",
-                borderRadius: "10px",
-                border: "none",
-                backgroundColor:
-                  currentFloor === f ? theme.accent : theme.surface,
-                color: currentFloor === f ? "#000" : theme.text,
-                cursor: "pointer",
-                fontWeight: currentFloor === f ? "700" : "500",
-                fontSize: isMobile ? "12px" : "14px",
-              }}
+              className={`px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
+                currentFloor === f
+                  ? "bg-primary text-primary-foreground font-bold"
+                  : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+              }`}
             >
               {f === 0 ? "G" : f}
             </button>
           ))}
         </div>
-        {!isDrawing && (
-          <div style={{ display: "flex", gap: "10px" }}>
-            {isAdminMode && (
-              <button
-                onClick={onSave}
-                style={{
-                  ...glassButton(theme, "blue"),
-                  padding: isMobile ? "8px 14px" : "10px 20px",
-                  fontSize: isMobile ? "12px" : "14px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                }}
-              >
-                <Save size={16} /> Save
-              </button>
-            )}
-            <button
-              onClick={handleClose}
-              style={{
-                ...glassButton(theme, "danger"),
-                padding: isMobile ? "8px 14px" : "10px 20px",
-                fontSize: isMobile ? "12px" : "14px",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-              }}
+        <div className="flex gap-2.5">
+          {isAdminMode && (
+            <Button
+              size={isMobile ? "sm" : "default"}
+              onClick={onSave}
+              className="gap-2 bg-blue-600 hover:bg-blue-500 text-white"
             >
-              <X size={16} /> Close
-            </button>
-          </div>
-        )}
+              <Save size={16} /> Save
+            </Button>
+          )}
+          <Button
+            size={isMobile ? "sm" : "default"}
+            onClick={handleClose}
+            variant="destructive"
+            className="gap-2"
+          >
+            <X size={16} /> Close
+          </Button>
+        </div>
       </div>
 
-      {/* --- DRAWING CONTROLS (Floating Bottom) --- */}
-      {isAdminMode && isDrawing && (
-        <div
-          style={{
-            position: "fixed",
-            bottom: "40px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            ...glassPanel(theme),
-            padding: "16px",
-            display: "flex",
-            alignItems: "center",
-            gap: "16px",
-            pointerEvents: "auto",
-            boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
-          }}
-        >
-          <div style={{ textAlign: "center", marginRight: "10px" }}>
-            <div
-              style={{
-                fontSize: "24px",
-                fontWeight: "800",
-                color: theme.accent,
-              }}
-            >
-              {drawingPoints.length}
-            </div>
-            <div
-              style={{
-                fontSize: "10px",
-                color: theme.textMuted,
-                textTransform: "uppercase",
-              }}
-            >
-              Points
-            </div>
-          </div>
-
-          <button
-            onClick={() => {
-              setDrawingPoints((p) => p.slice(0, -1));
-            }}
-            disabled={drawingPoints.length === 0}
-            style={{
-              ...glassButton(theme, "default"),
-              padding: "12px",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-            }}
-          >
-            <Undo size={18} /> Undo
-          </button>
-
-          <button
-            onClick={() => {
-              if (drawingPoints.length >= 3) setShowRoomForm(true);
-              else alert("Need 3 points!");
-            }}
-            disabled={drawingPoints.length < 3}
-            style={{
-              ...glassButton(theme, "success"),
-              padding: "12px 24px",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-            }}
-          >
-            <Check size={18} /> Finish
-          </button>
-
-          <button
-            onClick={cancelDrawing}
-            style={{
-              ...glassButton(theme, "danger"),
-              padding: "12px",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-            }}
-          >
-            <X size={18} /> Cancel
-          </button>
-        </div>
-      )}
-
-      {/* --- ROOM DETAILS FORM (Modal-ish) --- */}
-      {showRoomForm && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            backgroundColor: "rgba(0,0,0,0.4)",
-            backdropFilter: "blur(4px)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            pointerEvents: "auto",
-            zIndex: 200,
-          }}
-        >
+      {/* --- POI FORM MODAL --- */}
+      {(pendingPoint || selectedPOI) && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-end md:items-center justify-center pointer-events-auto z-[200] overflow-y-auto">
           <div
-            style={{
-              ...glassPanel(theme),
-              width: "400px",
-              maxWidth: "90%",
-              padding: "24px",
-              boxShadow: "0 20px 50px rgba(0,0,0,0.3)",
-            }}
+            className={`glass-panel w-full md:w-[420px] max-w-full md:max-w-[90%] p-5 md:p-6 shadow-2xl ${isMobile ? "rounded-t-2xl max-h-[85vh] overflow-y-auto" : "rounded-2xl"}`}
           >
-            <h3
-              style={{
-                marginTop: 0,
-                color: theme.accent,
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-              }}
-            >
-              <Anchor size={20} /> Room Details
+            <h3 className="mt-0 text-primary flex items-center gap-2 mb-4 text-xl font-bold">
+              <MapPin size={20} />
+              {selectedPOI ? "Edit Point" : "Add Point"}
             </h3>
 
-            <label
-              style={{
-                display: "block",
-                fontSize: "12px",
-                color: theme.textMuted,
-                marginBottom: "6px",
-              }}
-            >
-              Type
+            {/* Category Selector */}
+            <label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-2 block">
+              Category
             </label>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(3, 1fr)",
-                gap: "8px",
-                maxHeight: "200px",
-                overflowY: "auto",
-                marginBottom: "16px",
-              }}
-            >
-              {Object.entries(roomCategories).map(([cat, types]) => (
-                <React.Fragment key={cat}>
-                  {types.map((t) => (
-                    <button
-                      key={t.value}
-                      onClick={() => setRoomType(t.value)}
-                      style={{
-                        padding: "8px",
-                        border:
-                          roomType === t.value
-                            ? `2px solid ${theme.accent}`
-                            : `1px solid ${theme.border}`,
-                        borderRadius: "8px",
-                        backgroundColor:
-                          roomType === t.value
-                            ? `${theme.accent}22`
-                            : "transparent",
-                        color: theme.text,
-                        cursor: "pointer",
-                        fontSize: "12px",
-                        textAlign: "center",
-                      }}
-                    >
-                      <div style={{ fontSize: "18px" }}>
-                        {t.label.split(" ")[0]}
-                      </div>
-                      <div>{t.label.split(" ").slice(1).join(" ")}</div>
-                    </button>
-                  ))}
-                </React.Fragment>
-              ))}
+            <div className="flex gap-2 mb-4 flex-wrap">
+              {POI_CATEGORIES.map((cat) => {
+                const IconComp = cat.icon;
+                return (
+                  <button
+                    key={cat.value}
+                    onClick={() => setPoiCategory(cat.value)}
+                    className={`p-3 border rounded-xl flex flex-col items-center gap-1 transition-all ${
+                      poiCategory === cat.value
+                        ? "border-primary bg-primary/10"
+                        : "border-border hover:bg-muted/50"
+                    }`}
+                    style={{ minWidth: 70 }}
+                  >
+                    <IconComp size={20} style={{ color: cat.color }} />
+                    <span className="text-xs font-medium">{cat.label}</span>
+                  </button>
+                );
+              })}
             </div>
 
-            {numberedTypes.includes(roomType) && (
-              <div style={{ marginBottom: "16px" }}>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "12px",
-                    color: theme.textMuted,
-                    marginBottom: "6px",
-                  }}
-                >
-                  Room Number (e.g. 301)
-                </label>
-                <input
-                  autoFocus
-                  type="text"
-                  value={roomNumber}
-                  onChange={(e) => setRoomNumber(e.target.value)}
-                  style={{
-                    ...glassInput(theme),
-                    width: "100%",
-                    padding: "12px",
-                    fontSize: "16px",
-                  }}
-                  placeholder="Number..."
-                />
-              </div>
-            )}
-
-            <div style={{ marginBottom: "20px" }}>
-              <label
-                style={{
-                  display: "block",
-                  fontSize: "12px",
-                  color: theme.textMuted,
-                  marginBottom: "6px",
-                }}
-              >
-                Custom Name (Optional)
+            {/* Room Number */}
+            <div className="mb-3">
+              <label className="text-xs text-muted-foreground mb-1 block">
+                Room Number
               </label>
-              <input
-                type="text"
-                value={roomName}
-                onChange={(e) => setRoomName(e.target.value)}
-                style={{ ...glassInput(theme), width: "100%", padding: "12px" }}
-                placeholder={
-                  numberedTypes.includes(roomType)
-                    ? `e.g. "Biology Lab"`
-                    : "Name..."
-                }
+              <Input
+                value={poiRoomNumber}
+                onChange={(e) => setPoiRoomNumber(e.target.value)}
+                placeholder="e.g. 301"
+                className="bg-background/50"
               />
             </div>
 
-            <div style={{ display: "flex", gap: "12px" }}>
-              <button
-                onClick={finishDrawing}
-                style={{
-                  ...glassButton(theme, "success"),
-                  flex: 1,
-                  padding: "14px",
-                }}
+            {/* Room Name */}
+            <div className="mb-3">
+              <label className="text-xs text-muted-foreground mb-1 block">
+                Room Name
+              </label>
+              <Input
+                value={poiRoomName}
+                onChange={(e) => setPoiRoomName(e.target.value)}
+                placeholder="e.g. Computer Lab"
+                className="bg-background/50"
+              />
+            </div>
+
+            {/* Person */}
+            <div className="mb-3">
+              <label className="text-xs text-muted-foreground mb-1 block">
+                Person
+              </label>
+              <Input
+                value={poiPerson}
+                onChange={(e) => setPoiPerson(e.target.value)}
+                placeholder="e.g. Dr. Ahmed"
+                className="bg-background/50"
+              />
+            </div>
+
+            {/* Timing */}
+            <div className="mb-3">
+              <label className="text-xs text-muted-foreground mb-1 block">
+                Timing
+              </label>
+              <Input
+                value={poiTiming}
+                onChange={(e) => setPoiTiming(e.target.value)}
+                placeholder="e.g. Mon-Fri 9AM-5PM"
+                className="bg-background/50"
+              />
+            </div>
+
+            {/* Aliases */}
+            <div className="mb-5">
+              <label className="text-xs text-muted-foreground mb-1 block">
+                Aliases (comma-separated)
+              </label>
+              <Input
+                value={poiAliases}
+                onChange={(e) => setPoiAliases(e.target.value)}
+                placeholder="e.g. CS Lab, Lab 1"
+                className="bg-background/50"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                onClick={savePOI}
+                className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white"
               >
-                Save Room
-              </button>
-              <button
-                onClick={() => setShowRoomForm(false)}
-                style={{
-                  ...glassButton(theme, "default"),
-                  flex: 1,
-                  padding: "14px",
-                }}
+                {selectedPOI ? "Update" : "Save"} Point
+              </Button>
+              <Button
+                onClick={resetForm}
+                variant="secondary"
+                className="flex-1"
               >
-                Back
-              </button>
+                Cancel
+              </Button>
             </div>
           </div>
         </div>
       )}
 
-      {/* --- DESKTOP SIDEBAR (ROOM LIST ONLY) --- */}
-      {!isMobile && !isDrawing && (
-        <div
-          style={{
-            position: "absolute",
-            left: "24px",
-            top: "100px",
-            width: "280px",
-            ...panelStyle,
-            pointerEvents: "auto",
-          }}
-        >
+      {/* --- DESKTOP SIDEBAR (POI LIST) --- */}
+      {!isMobile && !isAddingPoint && !pendingPoint && !selectedPOI && (
+        <div className="absolute left-6 top-[100px] w-[280px] glass-panel pointer-events-auto p-5 flex flex-col gap-4 max-h-[calc(100vh-120px)] overflow-hidden">
           {isAdminMode && (
-            <button
-              onClick={startDrawing}
-              style={{
-                ...glassButton(theme, "accent"),
-                width: "100%",
-                padding: "14px",
-                marginBottom: "20px",
-              }}
+            <Button
+              onClick={() => setIsAddingPoint(true)}
+              className="w-full gap-2"
             >
-              <Pencil size={16} style={{ marginRight: "8px" }} /> Draw New Room
-            </button>
+              <Plus size={16} /> Add Point
+            </Button>
           )}
 
-          <h4
-            style={{
-              margin: "0 0 12px",
-              color: theme.textMuted,
-              fontSize: "11px",
-              textTransform: "uppercase",
-              letterSpacing: "1px",
-              fontWeight: "700",
-            }}
-          >
-            Rooms ({buildingRooms.length})
-          </h4>
-          <div
-            style={{
-              maxHeight: "400px",
-              overflowY: "auto",
-              display: "flex",
-              flexDirection: "column",
-              gap: "8px",
-            }}
-          >
-            {buildingRooms.map((room) => (
-              <div
-                key={room.properties["@id"]}
-                onClick={() => setSelectedRoom(room.properties["@id"])}
-                style={{
-                  padding: "14px",
-                  backgroundColor:
-                    selectedRoom === room.properties["@id"]
-                      ? `${theme.accent}33`
-                      : theme.surface,
-                  borderRadius: "14px",
-                  cursor: "pointer",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  border:
-                    selectedRoom === room.properties["@id"]
-                      ? `1px solid ${theme.accent}`
-                      : "1px solid transparent",
-                }}
+          <div>
+            <h4 className="mb-3 text-[11px] uppercase tracking-widest text-muted-foreground font-bold">
+              Points ({buildingPOIs.length})
+            </h4>
+            <div className="flex flex-col gap-2 overflow-y-auto max-h-[400px] custom-scrollbar pr-1">
+              {buildingPOIs.map((poi) => (
+                <div
+                  key={poi.properties["@id"]}
+                  onClick={() => isAdminMode && editPOI(poi)}
+                  className={`p-3 rounded-xl cursor-pointer flex justify-between items-center transition-all border bg-card/50 border-border hover:bg-muted/50`}
+                >
+                  <div className="flex items-center gap-2">
+                    <CategoryIcon
+                      category={poi.properties.category}
+                      size={18}
+                    />
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-foreground">
+                        {poi.properties.room_number ||
+                          poi.properties.room_name ||
+                          "Unnamed"}
+                      </span>
+                      <span className="text-[11px] text-muted-foreground">
+                        {
+                          POI_CATEGORIES.find(
+                            (c) => c.value === poi.properties.category,
+                          )?.label
+                        }
+                      </span>
+                    </div>
+                  </div>
+                  {isAdminMode && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deletePOI(poi.properties["@id"]);
+                      }}
+                      className="text-destructive hover:text-destructive/80 p-1"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
+              ))}
+              {!buildingPOIs.length && (
+                <p className="text-center text-sm text-muted-foreground py-8">
+                  No points. {isAdminMode ? "Add one!" : ""}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- MOBILE BOTTOM SHEET (POI LIST) --- */}
+      {isMobile && !isAddingPoint && !pendingPoint && !selectedPOI && (
+        <div className="fixed bottom-0 left-0 right-0 glass-panel pointer-events-auto p-4 rounded-t-2xl max-h-[40vh] overflow-hidden z-[100]">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-[11px] uppercase tracking-widest text-muted-foreground font-bold">
+              Points ({buildingPOIs.length})
+            </h4>
+            {isAdminMode && (
+              <Button
+                size="sm"
+                onClick={() => setIsAddingPoint(true)}
+                className="gap-1"
               >
-                <div style={{ display: "flex", flexDirection: "column" }}>
-                  <span
-                    style={{
-                      fontSize: "14px",
-                      color: theme.text,
-                      fontWeight: "500",
-                    }}
-                  >
-                    {
-                      allRoomTypes
-                        .find((t) => t.value === room.properties.room)
-                        ?.label.split(" ")[0]
-                    }{" "}
-                    {room.properties.room_number
-                      ? `#${room.properties.room_number}`
-                      : ""}{" "}
-                    {room.properties.name !== room.properties.room_number &&
-                      room.properties.name}
-                  </span>
-                  <span style={{ fontSize: "11px", color: theme.textMuted }}>
-                    {allRoomTypes
-                      .find((t) => t.value === room.properties.room)
-                      ?.label.split(" ")
-                      .slice(1)
-                      .join(" ")}
+                <Plus size={14} /> Add
+              </Button>
+            )}
+          </div>
+          <div className="flex flex-col gap-2 overflow-y-auto max-h-[calc(40vh-80px)] custom-scrollbar">
+            {buildingPOIs.map((poi) => (
+              <div
+                key={poi.properties["@id"]}
+                onClick={() => isAdminMode && editPOI(poi)}
+                className="p-3 rounded-xl flex justify-between items-center border bg-card/50 border-border"
+              >
+                <div className="flex items-center gap-2">
+                  <CategoryIcon category={poi.properties.category} size={16} />
+                  <span className="text-sm font-medium text-foreground">
+                    {poi.properties.room_number ||
+                      poi.properties.room_name ||
+                      "Unnamed"}
                   </span>
                 </div>
                 {isAdminMode && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      deleteRoom(room.properties["@id"]);
+                      deletePOI(poi.properties["@id"]);
                     }}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: theme.danger,
-                      cursor: "pointer",
-                      fontSize: "18px",
-                    }}
+                    className="text-destructive p-1"
                   >
-                    <Trash2 size={18} />
+                    <Trash2 size={16} />
                   </button>
                 )}
               </div>
             ))}
-            {!buildingRooms.length && (
-              <p
-                style={{
-                  color: theme.textMuted,
-                  fontSize: "13px",
-                  textAlign: "center",
-                  padding: "20px",
-                }}
-              >
-                No rooms. Start drawing!
+            {!buildingPOIs.length && (
+              <p className="text-center text-sm text-muted-foreground py-4">
+                No points yet.
               </p>
             )}
           </div>
+        </div>
+      )}
+
+      {/* --- ADD POINT MODE INDICATOR --- */}
+      {isAddingPoint && (
+        <div
+          className={`fixed ${isMobile ? "bottom-4 left-4 right-4" : "bottom-10 left-1/2 -translate-x-1/2"} glass-panel p-4 flex items-center gap-4 pointer-events-auto rounded-xl shadow-2xl z-[100]`}
+        >
+          <MapPin size={24} className="text-primary" />
+          <span className="text-sm font-medium flex-1">
+            Tap on map to place point
+          </span>
+          <Button
+            onClick={() => setIsAddingPoint(false)}
+            variant="destructive"
+            size="sm"
+          >
+            Cancel
+          </Button>
         </div>
       )}
     </div>

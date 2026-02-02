@@ -151,18 +151,6 @@ export default function CampusMap() {
   };
 
   // If editing, show editor full screen
-  if (isEditingFloorplan) {
-    return (
-      <FloorplanEditor
-        building={selectedFeature}
-        onClose={() => setIsEditingFloorplan(false)}
-        onSave={(updatedGeoJSON) => {
-          setGeoJsonData(updatedGeoJSON);
-          setIsEditingFloorplan(false);
-        }}
-      />
-    );
-  }
 
   return (
     <div
@@ -211,22 +199,24 @@ export default function CampusMap() {
         )}
 
         {/* Building Panel */}
-        {activePanel === "building" && selectedFeature && (
-          <div className="pointer-events-auto">
-            <BuildingPanel
-              isMobile={isMobile}
-              isDarkMode={isDarkMode}
-              selectedFeature={selectedFeature}
-              isAdminMode={isAdminMode}
-              updateBuildingLevels={updateBuildingLevels}
-              updateUndergroundLevels={updateUndergroundLevels}
-              handleSave={handleSave}
-              deleteBuilding={deleteBuilding}
-              setIsEditingFloorplan={setIsEditingFloorplan}
-              onClose={() => setActivePanel(null)}
-            />
-          </div>
-        )}
+        {activePanel === "building" &&
+          selectedFeature &&
+          !isEditingFloorplan && (
+            <div className="pointer-events-auto">
+              <BuildingPanel
+                isMobile={isMobile}
+                isDarkMode={isDarkMode}
+                selectedFeature={selectedFeature}
+                isAdminMode={isAdminMode}
+                updateBuildingLevels={updateBuildingLevels}
+                updateUndergroundLevels={updateUndergroundLevels}
+                handleSave={handleSave}
+                deleteBuilding={deleteBuilding}
+                setIsEditingFloorplan={setIsEditingFloorplan}
+                onClose={() => setActivePanel(null)}
+              />
+            </div>
+          )}
 
         {/* Navigation Panel */}
         {(!isMobile ? true : activePanel === "nav") &&
@@ -299,6 +289,20 @@ export default function CampusMap() {
             <Compass size={24} />
           </button>
         </div>
+      )}
+      {/* Floorplan Editor */}
+      {isEditingFloorplan && selectedFeature && (
+        <FloorplanEditor
+          building={selectedFeature}
+          geoJsonData={geoJsonData}
+          setGeoJsonData={setGeoJsonData}
+          mapRef={mapRef}
+          onClose={() => setIsEditingFloorplan(false)}
+          onSave={handleSave}
+          theme={theme}
+          isMobile={isMobile}
+          isAdminMode={isAdminMode}
+        />
       )}
     </div>
   );
