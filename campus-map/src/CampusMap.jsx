@@ -248,15 +248,7 @@ export default function CampusMap() {
           // Actually, let's just use activePanel for both for simplicity,
           // BUT implementation says: "Mobile: FABs".
           // Let's add FABs for desktop too if panels are hidden?
-          // Or just render them in a sidebar stack.
-          // Let's render ControlsPanel always on Desktop.
-          // BuildingPanel when selected.
-          // NavigationPanel... maybe we need a button to open it?
-          // Or just render it below Controls?
-          (activePanel === "nav" ||
-            (!isMobile && activePanel !== "building")) && (
-            // Logic: On desktop, show Nav unless Building is open (to save space) or show both?
-            // Let's show NavPanel.
+          (!isMobile || (!routeGeoJSON && activePanel === "nav")) && ( // Hide panel only on mobile when navigation is active
             <div className="pointer-events-auto mt-4">
               <NavigationPanel
                 isMobile={isMobile}

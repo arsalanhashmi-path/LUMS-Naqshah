@@ -187,10 +187,10 @@ export function useMap(containerRef) {
             source: "route-source",
             layout: { "line-join": "round", "line-cap": "round" },
             paint: {
-              "line-color": "#1e3a8a",
+              "line-color": "#ef4444",
               "line-width": 12,
               "line-blur": 6,
-              "line-opacity": 0.6,
+              "line-opacity": 0.4,
             },
           },
           {
@@ -198,7 +198,7 @@ export function useMap(containerRef) {
             type: "line",
             source: "route-source",
             layout: { "line-join": "round", "line-cap": "round" },
-            paint: { "line-color": "#fff", "line-width": 3 },
+            paint: { "line-color": "#ef4444", "line-width": 4 },
           },
           {
             id: "building-labels",
@@ -238,8 +238,8 @@ export function useMap(containerRef) {
       pitch: 60,
       bearing: -20.8,
       maxBounds: [
-        [74.39, 31.46],
-        [74.43, 31.48],
+        [74.404, 31.465],
+        [74.416, 31.476],
       ],
       attributionControl: false,
     });

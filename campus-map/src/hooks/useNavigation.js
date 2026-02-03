@@ -55,13 +55,45 @@ export function useNavigation(geoJsonData, mapRef, isMobile) {
       return;
     }
 
-    setRouteGeoJSON(route);
-    setIsNavigating(false);
+    // Animate the path rendering
+    const fullCoords = route.geometry.coordinates;
+    const duration = 2000; // 2 seconds total for animation
+    const frames = fullCoords.length;
+    const frameDuration = duration / frames;
+    
+    let currentFrame = 0;
+    
+    // Clear previous route first
+    setRouteGeoJSON({
+      type: "Feature",
+      geometry: {
+        type: "LineString",
+        coordinates: []
+      }
+    });
+
+    const animate = () => {
+      if (currentFrame <= frames) {
+        setRouteGeoJSON({
+          type: "Feature",
+          geometry: {
+            type: "LineString",
+            coordinates: fullCoords.slice(0, currentFrame)
+          }
+        });
+        currentFrame++;
+        setTimeout(animate, frameDuration);
+      } else {
+        setIsNavigating(false);
+      }
+    };
+
+    animate();
 
     // Camera animation
-    if (mapRef.current && route.geometry.coordinates.length > 0) {
+    if (mapRef.current && fullCoords.length > 0) {
       const bounds = new maplibregl.LngLatBounds();
-      route.geometry.coordinates.forEach((coord) => bounds.extend(coord));
+      fullCoords.forEach((coord) => bounds.extend(coord));
       mapRef.current.fitBounds(bounds, {
         padding: isMobile ? 60 : 80,
         pitch: 45,
