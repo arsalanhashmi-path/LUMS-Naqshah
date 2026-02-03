@@ -44,34 +44,47 @@ export default function BuildingPanel({
         {/* Levels Display */}
         <div className="p-4 rounded-xl bg-gradient-to-br from-primary/10 to-pink-500/10">
           <label className="block text-[11px] uppercase tracking-wide text-muted-foreground font-bold mb-3">
-            Levels
+            Levels (Above Ground)
           </label>
-          <div className="flex items-center justify-between">
-            {isAdminMode && (
-              <Button
-                variant="destructive"
-                size="icon-lg"
-                onClick={() => updateBuildingLevels(Math.max(1, levels - 1))}
-              >
-                <Minus className="h-5 w-5" />
-              </Button>
-            )}
-            <div className="text-center flex-1">
-              <span className="text-4xl font-extrabold text-foreground">
-                {levels}
-              </span>
-              <span className="block text-[11px] uppercase text-muted-foreground">
-                Floors
-              </span>
-            </div>
-            {isAdminMode && (
-              <Button
-                variant="success"
-                size="icon-lg"
-                onClick={() => updateBuildingLevels(levels + 1)}
-              >
-                <Plus className="h-5 w-5" />
-              </Button>
+          <div className="flex items-center justify-between gap-3">
+            {isAdminMode ? (
+              <div className="flex items-center gap-2 w-full">
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="h-8 w-8 shrink-0"
+                  onClick={() => updateBuildingLevels(Math.max(1, levels - 1))}
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <input
+                  type="number"
+                  value={levels}
+                  onChange={(e) =>
+                    updateBuildingLevels(
+                      Math.max(1, parseInt(e.target.value) || 1),
+                    )
+                  }
+                  className="bg-background/50 border-border border rounded-md h-8 w-full text-center font-bold text-foreground"
+                />
+                <Button
+                  variant="success"
+                  size="icon"
+                  className="h-8 w-8 shrink-0"
+                  onClick={() => updateBuildingLevels(levels + 1)}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="text-center flex-1">
+                <span className="text-4xl font-extrabold text-foreground">
+                  {levels}
+                </span>
+                <span className="block text-[11px] uppercase text-muted-foreground">
+                  Floors
+                </span>
+              </div>
             )}
           </div>
 
@@ -81,22 +94,31 @@ export default function BuildingPanel({
               <label className="block text-[11px] uppercase tracking-wide text-muted-foreground font-bold mb-2">
                 Underground Floors
               </label>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <Button
                   variant="destructive"
-                  size="sm"
+                  size="icon"
+                  className="h-8 w-8 shrink-0"
                   onClick={() =>
                     updateUndergroundLevels(Math.max(0, undergroundLevels - 1))
                   }
                 >
                   <Minus className="h-4 w-4" />
                 </Button>
-                <span className="text-2xl font-extrabold text-foreground">
-                  {undergroundLevels}
-                </span>
+                <input
+                  type="number"
+                  value={undergroundLevels}
+                  onChange={(e) =>
+                    updateUndergroundLevels(
+                      Math.max(0, parseInt(e.target.value) || 0),
+                    )
+                  }
+                  className="bg-background/50 border-border border rounded-md h-8 w-full text-center font-bold text-foreground"
+                />
                 <Button
                   variant="success"
-                  size="sm"
+                  size="icon"
+                  className="h-8 w-8 shrink-0"
                   onClick={() => updateUndergroundLevels(undergroundLevels + 1)}
                 >
                   <Plus className="h-4 w-4" />

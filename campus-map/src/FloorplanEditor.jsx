@@ -13,9 +13,11 @@ import {
   Trash2,
   Plus,
   Pencil,
+  ArrowUpRight,
+  ArrowUpSquare,
 } from "lucide-react";
 
-// POI Categories with icons
+// POI Categories with icons and OSM mapping
 const POI_CATEGORIES = [
   { value: "eatery", label: "Eatery", icon: Utensils, color: "#f97316" },
   { value: "office", label: "Office", icon: Briefcase, color: "#3b82f6" },
@@ -27,6 +29,20 @@ const POI_CATEGORIES = [
   },
   { value: "shop", label: "Shop", icon: ShoppingBag, color: "#a855f7" },
   { value: "lab", label: "Lab", icon: FlaskConical, color: "#06b6d4" },
+  {
+    value: "staircase",
+    label: "Stairs",
+    icon: ArrowUpRight,
+    color: "#64748b",
+    osm: { highway: "steps", indoor: "room", room: "staircase" },
+  },
+  {
+    value: "lift",
+    label: "Lift",
+    icon: ArrowUpSquare,
+    color: "#64748b",
+    osm: { highway: "elevator", indoor: "room", room: "elevator" },
+  },
 ];
 
 export default function FloorplanEditor({
@@ -241,6 +257,7 @@ export default function FloorplanEditor({
         person: poiPerson,
         timing: poiTiming,
         aliases: aliasArray,
+        ...(POI_CATEGORIES.find((c) => c.value === poiCategory)?.osm || {}),
       },
     };
 

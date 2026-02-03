@@ -19393,6 +19393,31 @@
         "timing": "",
         "aliases": []
       }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          74.4092558864892,
+          31.471011644751485
+        ]
+      },
+      "properties": {
+        "@id": "poi_1770086159100",
+        "poi": true,
+        "building_ref": "relation/2379800",
+        "level": 0,
+        "category": "staircase",
+        "room_number": "",
+        "room_name": "Stairs",
+        "person": "",
+        "timing": "",
+        "aliases": [],
+        "highway": "steps",
+        "indoor": "room",
+        "room": "staircase"
+      }
     }
   ]
 }

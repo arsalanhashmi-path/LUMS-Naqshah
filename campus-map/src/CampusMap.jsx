@@ -196,7 +196,7 @@ export default function CampusMap() {
 
       {/* PANELS */}
       <div
-        className={`absolute ${isMobile ? "bottom-0 left-0 right-0" : "top-[80px] left-6"} z-10 flex flex-col gap-4 pointer-events-none`}
+        className={`absolute ${isMobile ? "bottom-0 left-0 right-0" : "top-[80px] left-4"} z-10 flex flex-col gap-4 pointer-events-none`}
       >
         {/* Controls Panel (Desktop: Top Left, Mobile: Bottom Sheet/Float) */}
         {(!isMobile || activePanel === "controls") && (
