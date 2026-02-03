@@ -149,11 +149,11 @@ export default function NavigationPanel({
           </Button>
         </div>
 
-        {routeGeoJSON && (
+        {routeGeoJSON && routeGeoJSON.properties && (
           <div className="flex items-center gap-2 p-3 bg-pink-500/20 rounded-xl text-pink-400 text-xs text-wrap whitespace-normal">
             <Check className="h-4 w-4 shrink-0" />
             <span className="break-words">
-              {routeGeoJSON.properties.from} → {routeGeoJSON.properties.to}
+              {routeGeoJSON.properties?.from} → {routeGeoJSON.properties?.to}
             </span>
           </div>
         )}

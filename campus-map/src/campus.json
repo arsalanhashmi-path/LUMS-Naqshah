@@ -19371,6 +19371,28 @@
         ]
       },
       "id": "node/12731553423"
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          74.40906015880651,
+          31.471028737405206
+        ]
+      },
+      "properties": {
+        "@id": "poi_1770085308510",
+        "poi": true,
+        "building_ref": "relation/2379800",
+        "level": 0,
+        "category": "office",
+        "room_number": "",
+        "room_name": "OSA",
+        "person": "",
+        "timing": "",
+        "aliases": []
+      }
     }
   ]
 }

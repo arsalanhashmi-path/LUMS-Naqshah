@@ -69,7 +69,8 @@ export function useNavigation(geoJsonData, mapRef, isMobile) {
       geometry: {
         type: "LineString",
         coordinates: []
-      }
+      },
+      properties: { from: "", to: "" }
     });
 
     const animate = () => {
@@ -79,6 +80,10 @@ export function useNavigation(geoJsonData, mapRef, isMobile) {
           geometry: {
             type: "LineString",
             coordinates: fullCoords.slice(0, currentFrame)
+          },
+          properties: { 
+            from: startFeature.properties?.name || startFeature.properties?.room_name || "Start",
+            to: endFeature.properties?.name || endFeature.properties?.room_name || "End"
           }
         });
         currentFrame++;

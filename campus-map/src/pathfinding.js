@@ -169,6 +169,10 @@ export function aStar(graph, startKey, endKey) {
 export function getCentroid(feature) {
   if (!feature?.geometry) return null;
   
+  if (feature.geometry.type === 'Point') {
+    return feature.geometry.coordinates;
+  }
+  
   let coords = feature.geometry.coordinates;
   if (feature.geometry.type === 'Polygon') {
     coords = coords[0];
@@ -227,8 +231,8 @@ export function findRoute(startFeature, endFeature, graph) {
       coordinates: fullPath
     },
     properties: {
-      from: startFeature.properties?.name || 'Start',
-      to: endFeature.properties?.name || 'End'
+      from: startFeature.properties?.name || startFeature.properties?.room_name || startFeature.properties?.room_number || 'Start',
+      to: endFeature.properties?.name || endFeature.properties?.room_name || endFeature.properties?.room_number || 'End'
     }
   };
 }

@@ -38,10 +38,22 @@ export function useCampusData(mapRef) {
   const availableBuildings = useMemo(
     () =>
       geoJsonData.features
-        .filter(
-          (f) =>
-            f.properties.name && f.properties["@id"] && f.properties.building
-        )
+        .filter((f) => {
+          const p = f.properties;
+          return (p.name || p.room_name || p.room_number) && p["@id"] && (p.building || p.poi);
+        })
+        .map((f) => {
+          // Ensure we have a consistent name property for display
+          const p = f.properties;
+          const displayName = p.name || p.room_name || (p.room_number ? `Room ${p.room_number}` : "Unnamed Location");
+          return {
+            ...f,
+            properties: {
+              ...p,
+              name: displayName, // Override/set name for dropdowns
+            },
+          };
+        })
         .sort((a, b) => a.properties.name.localeCompare(b.properties.name)),
     [geoJsonData]
   );
