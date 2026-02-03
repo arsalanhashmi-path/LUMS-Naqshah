@@ -1,5 +1,14 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Settings, Compass } from "lucide-react";
+import {
+  Settings,
+  Compass,
+  LocateFixed,
+  Box,
+  Loader2,
+  Plus,
+  Minus,
+} from "lucide-react";
+import maplibregl from "maplibre-gl";
 import FloorplanEditor from "./FloorplanEditor";
 import Navbar from "./components/layout/Navbar";
 import NavigationPanel from "./components/panels/NavigationPanel";
@@ -75,7 +84,7 @@ export default function CampusMap() {
       if (e.features && e.features[0]) {
         const id = e.features[0].properties["@id"];
         setSelectedBuildingId(id);
-        setActivePanel("building");
+        setIsEditingFloorplan(true); // Go directly to floorplan
         mapRef.current.setFilter("3d-buildings-highlight", ["in", "@id", id]);
 
         // Prevent the map click event from clearing the selection immediately
@@ -179,6 +188,11 @@ export default function CampusMap() {
         mapRef={mapRef}
         lumsLogo={lumsLogo}
       />
+
+      {/* Mobile: Top-Right Control Buttons */}
+      {isMobile && !isEditingFloorplan && (
+        <MobileControlStrip mapRef={mapRef} theme={theme} />
+      )}
 
       {/* PANELS */}
       <div
@@ -307,5 +321,124 @@ export default function CampusMap() {
     </div>
   );
 }
-// But we use maplibregl.Popup/LngLatBounds.
-import maplibregl from "maplibre-gl";
+
+// Mobile control strip component - floating buttons at top-right
+function MobileControlStrip({ mapRef, theme }) {
+  const [isLocating, setIsLocating] = useState(false);
+  const userMarkerRef = useRef(null);
+
+  const handleLocateMe = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
+      return;
+    }
+
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+
+        if (userMarkerRef.current) {
+          userMarkerRef.current.remove();
+        }
+
+        const el = document.createElement("div");
+        el.className = "user-location-marker";
+        el.innerHTML = `
+          <div class="pulse-ring"></div>
+          <div class="pulse-core"></div>
+        `;
+
+        userMarkerRef.current = new maplibregl.Marker({ element: el })
+          .setLngLat([longitude, latitude])
+          .addTo(mapRef.current);
+
+        mapRef.current?.flyTo({
+          center: [longitude, latitude],
+          zoom: 18,
+          pitch: 45,
+          duration: 1500,
+        });
+        setIsLocating(false);
+      },
+      (error) => {
+        setIsLocating(false);
+        alert("Could not get your location. Please check permissions.");
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+    );
+  };
+
+  const buttonStyle = {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    border: "none",
+    backgroundColor: "#ffffff",
+    color: "#1a1a2e",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    boxShadow: "0 2px 12px rgba(0,0,0,0.25)",
+  };
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 80,
+        right: 16,
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+        zIndex: 40,
+      }}
+    >
+      <button
+        onClick={() =>
+          mapRef.current?.easeTo({ bearing: 0, pitch: 0, duration: 1000 })
+        }
+        style={buttonStyle}
+        title="Reset North"
+      >
+        <Compass size={20} />
+      </button>
+      <button
+        onClick={() =>
+          mapRef.current?.easeTo({ pitch: 60, bearing: -20, duration: 1000 })
+        }
+        style={buttonStyle}
+        title="3D View"
+      >
+        <Box size={20} />
+      </button>
+      <button
+        onClick={handleLocateMe}
+        disabled={isLocating}
+        style={{ ...buttonStyle, opacity: isLocating ? 0.6 : 1 }}
+        title="My Location"
+      >
+        {isLocating ? (
+          <Loader2 size={20} className="animate-spin" />
+        ) : (
+          <LocateFixed size={20} />
+        )}
+      </button>
+      <button
+        onClick={() => mapRef.current?.zoomIn({ duration: 300 })}
+        style={buttonStyle}
+        title="Zoom In"
+      >
+        <Plus size={20} />
+      </button>
+      <button
+        onClick={() => mapRef.current?.zoomOut({ duration: 300 })}
+        style={buttonStyle}
+        title="Zoom Out"
+      >
+        <Minus size={20} />
+      </button>
+    </div>
+  );
+}

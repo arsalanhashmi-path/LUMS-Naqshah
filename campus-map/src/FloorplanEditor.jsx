@@ -74,18 +74,40 @@ export default function FloorplanEditor({
       f.properties?.level === currentFloor,
   );
 
-  // Update map camera when building selected
+  // Update map camera when building selected - fit to building bounds
   useEffect(() => {
-    if (mapRef.current && building) {
-      const centroid = getCentroid(building);
-      if (centroid)
-        mapRef.current.easeTo({
-          center: centroid,
-          zoom: 19,
+    if (mapRef.current && building && building.geometry) {
+      const map = mapRef.current;
+
+      // Calculate bounds from building geometry
+      const coords =
+        building.geometry.type === "Polygon"
+          ? building.geometry.coordinates[0]
+          : building.geometry.coordinates.flat(2);
+
+      if (coords && coords.length > 0) {
+        const bounds = coords.reduce(
+          (acc, coord) => {
+            const [lng, lat] = Array.isArray(coord[0]) ? coord : coord;
+            return [
+              [Math.min(acc[0][0], lng), Math.min(acc[0][1], lat)],
+              [Math.max(acc[1][0], lng), Math.max(acc[1][1], lat)],
+            ];
+          },
+          [
+            [Infinity, Infinity],
+            [-Infinity, -Infinity],
+          ],
+        );
+
+        // Fit to bounds with padding, top-down view
+        map.fitBounds(bounds, {
+          padding: { top: 100, bottom: 100, left: 50, right: 50 },
           pitch: 0,
           bearing: 0,
           duration: 800,
         });
+      }
     }
   }, [building, mapRef]);
 
@@ -281,46 +303,44 @@ export default function FloorplanEditor({
     >
       {/* --- FLOATING TOOLBAR --- */}
       <div
-        className={`absolute top-[80px] right-4 md:right-8 glass-panel flex items-center gap-6 pointer-events-auto flex-wrap justify-end max-w-[90%] z-[100] p-4 md:p-6`}
+        className={`absolute top-[80px] left-1/2 -translate-x-1/2 glass-panel flex flex-col items-center gap-3 pointer-events-auto z-[100] px-5 py-4 rounded-xl relative w-fit`}
       >
-        <h3 className="m-0 text-base md:text-lg font-bold text-foreground whitespace-nowrap flex items-center gap-2">
-          {isAdminMode && <Pencil size={18} className="text-primary" />}
+        {/* Close X with red circle */}
+        <button
+          onClick={handleClose}
+          className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-md transition-colors"
+          title="Close"
+        >
+          <X size={16} />
+        </button>
+
+        <h3 className="m-0 text-sm md:text-base font-semibold text-foreground whitespace-nowrap">
           {building?.properties?.name || "Building"}
         </h3>
-        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+        <div className="flex gap-1.5">
           {floors.map((f) => (
             <button
               key={f}
               onClick={() => setCurrentFloor(f)}
-              className={`px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
+              className={`w-8 h-8 rounded-md text-sm font-medium transition-colors ${
                 currentFloor === f
-                  ? "bg-primary text-primary-foreground font-bold"
-                  : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary/60 text-secondary-foreground hover:bg-secondary"
               }`}
             >
               {f === 0 ? "G" : f}
             </button>
           ))}
         </div>
-        <div className="flex gap-2.5">
-          {isAdminMode && (
-            <Button
-              size={isMobile ? "sm" : "default"}
-              onClick={onSave}
-              className="gap-2 bg-blue-600 hover:bg-blue-500 text-white"
-            >
-              <Save size={16} /> Save
-            </Button>
-          )}
+        {isAdminMode && (
           <Button
-            size={isMobile ? "sm" : "default"}
-            onClick={handleClose}
-            variant="destructive"
-            className="gap-2"
+            size="sm"
+            onClick={onSave}
+            className="gap-1.5 bg-blue-600 hover:bg-blue-500 text-white"
           >
-            <X size={16} /> Close
+            <Save size={14} /> Save
           </Button>
-        </div>
+        )}
       </div>
 
       {/* --- POI FORM MODAL --- */}
@@ -445,7 +465,7 @@ export default function FloorplanEditor({
 
       {/* --- DESKTOP SIDEBAR (POI LIST) --- */}
       {!isMobile && !isAddingPoint && !pendingPoint && !selectedPOI && (
-        <div className="absolute left-6 top-[100px] w-[280px] glass-panel pointer-events-auto p-5 flex flex-col gap-4 max-h-[calc(100vh-120px)] overflow-hidden">
+        <div className="absolute right-6 bottom-6 w-[280px] glass-panel pointer-events-auto p-5 flex flex-col gap-4 max-h-[50vh] overflow-hidden rounded-xl">
           {isAdminMode && (
             <Button
               onClick={() => setIsAddingPoint(true)}

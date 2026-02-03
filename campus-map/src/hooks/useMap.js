@@ -200,6 +200,37 @@ export function useMap(containerRef) {
             layout: { "line-join": "round", "line-cap": "round" },
             paint: { "line-color": "#fff", "line-width": 3 },
           },
+          {
+            id: "building-labels",
+            type: "symbol",
+            source: "campus-data",
+            minzoom: 16,
+            filter: [
+              "all",
+              ["has", "name"],
+              ["!=", "name", "Lahore University of Management Sciences"],
+              ["any", ["has", "building"], ["has", "building:levels"]],
+            ],
+            layout: {
+              "text-field": ["get", "name"],
+              "text-size": ["interpolate", ["linear"], ["zoom"], 16, 9, 18, 12, 20, 14],
+              "text-anchor": "center",
+              "text-allow-overlap": false,
+              "text-ignore-placement": false,
+              "text-optional": true,
+              "text-padding": 10,
+              "text-max-width": 8,
+              "text-letter-spacing": 0.05,
+              "text-transform": "uppercase",
+              "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+            },
+            paint: {
+              "text-color": "#1e3a8a",
+              "text-halo-color": "rgba(255, 255, 255, 0.9)",
+              "text-halo-width": 1.5,
+              "text-halo-blur": 0.5,
+            },
+          },
         ],
       },
       center: [74.4098, 31.4705],
@@ -212,12 +243,6 @@ export function useMap(containerRef) {
       ],
       attributionControl: false,
     });
-
-    // Add navigation control
-    map.current.addControl(
-      new maplibregl.NavigationControl({ visualizer: true }),
-      "top-right"
-    );
 
     // Initial Theme Set
      map.current.on('load', () => {
@@ -258,6 +283,29 @@ export function useMap(containerRef) {
         "mask-layer",
         "fill-color",
         isDarkMode ? "#0f172a" : "#f8fafc"
+      );
+    }
+
+    // Update paths color based on theme
+    if (map.current.getLayer("paths-layer")) {
+      map.current.setPaintProperty(
+        "paths-layer",
+        "line-color",
+        isDarkMode ? "#ffffff" : "#1a1a1a"
+      );
+    }
+
+    // Update building labels for theme
+    if (map.current.getLayer("building-labels")) {
+      map.current.setPaintProperty(
+        "building-labels",
+        "text-color",
+        isDarkMode ? "#ffffff" : "#1e3a8a"
+      );
+      map.current.setPaintProperty(
+        "building-labels",
+        "text-halo-color",
+        isDarkMode ? "#1e3a8a" : "#ffffff"
       );
     }
   }, [isDarkMode, mapLoaded]);

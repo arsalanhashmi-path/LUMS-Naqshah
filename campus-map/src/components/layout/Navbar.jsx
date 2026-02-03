@@ -26,32 +26,37 @@ export default function Navbar({
     b.properties.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
+  const pillStyle = "bg-white border border-gray-200 shadow-lg rounded-xl";
+  const pillHeight = "h-12";
+
   return (
-    <header className="absolute top-0 left-0 right-0 h-[60px] md:h-[70px] bg-white flex items-center justify-between px-4 md:px-6 shadow-lg z-[100]">
-      {/* Logo & Title */}
-      <div className="flex items-center gap-2.5 md:gap-3.5">
-        <img src={lumsLogo} alt="LUMS" className="h-10 md:h-[50px] w-auto" />
+    <header className="absolute top-4 left-4 right-4 flex items-center z-[100] pointer-events-none gap-3">
+      {/* Logo & Title - Floating Pill */}
+      <div
+        className={`flex items-center gap-2 px-3 md:px-4 ${pillHeight} ${pillStyle} pointer-events-auto shrink-0`}
+      >
+        <img src={lumsLogo} alt="LUMS" className="h-7 md:h-8 w-auto" />
         <h1
-          className="m-0 text-2xl md:text-[32px] font-extrabold tracking-tight"
+          className="m-0 text-base md:text-xl font-extrabold tracking-tight"
           style={{
             color: LUMS_BLUE,
             fontFamily: "'Inter', system-ui, sans-serif",
+            WebkitTextStroke: "1px white",
+            paintOrder: "stroke fill",
           }}
         >
           Naqshah
         </h1>
       </div>
 
-      {/* Search Bar */}
-      <div className="relative flex-1 max-w-[400px] mx-5">
+      {/* Search Bar - Centered, Fills Available Space */}
+      <div className="relative flex-1 pointer-events-auto">
         <div
-          className={`flex items-center glass-panel rounded-xl px-4 py-2 border transition-all ${
-            isSearchFocused
-              ? "border-primary ring-1 ring-primary"
-              : "border-transparent"
+          className={`flex items-center px-4 ${pillHeight} ${pillStyle} transition-all ${
+            isSearchFocused ? "ring-2 ring-primary/50" : ""
           }`}
         >
-          <Search className="h-4 w-4 mr-2 text-muted-foreground" />
+          <Search className="h-4 w-4 mr-2 text-muted-foreground shrink-0" />
           <Input
             type="text"
             placeholder="Search buildings..."
@@ -66,7 +71,7 @@ export default function Navbar({
               variant="ghost"
               size="sm"
               onClick={() => setSearchQuery("")}
-              className="h-auto p-1 hover:bg-transparent"
+              className="h-auto p-1 hover:bg-transparent shrink-0"
             >
               <X className="h-3 w-3" />
             </Button>
@@ -75,7 +80,9 @@ export default function Navbar({
 
         {/* Search Results Dropdown */}
         {isSearchFocused && searchQuery && (
-          <div className="absolute top-[120%] left-0 right-0 glass-panel overflow-hidden z-[200]">
+          <div
+            className={`absolute top-[120%] left-0 right-0 ${pillStyle} overflow-hidden z-[200]`}
+          >
             <ScrollArea className="max-h-[300px]">
               {filteredBuildings.slice(0, 10).map((b) => (
                 <div
@@ -93,7 +100,7 @@ export default function Navbar({
                     setSearchQuery("");
                     setIsSearchFocused(false);
                   }}
-                  className="flex items-center gap-2.5 px-4 py-3 border-b border-border cursor-pointer hover:bg-accent/20 transition-colors"
+                  className="flex items-center gap-2.5 px-4 py-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors"
                 >
                   <Building2 className="h-4 w-4 text-muted-foreground" />
                   <span className="font-semibold text-sm text-foreground">
@@ -111,49 +118,37 @@ export default function Navbar({
         )}
       </div>
 
-      {/* Right Controls */}
-      <div className="flex items-center gap-3">
-        <Button
-          variant={isAdminMode ? "destructive" : "outline"}
-          size={isMobile ? "sm" : "default"}
+      {/* Right Controls - Floating Pill */}
+      <div
+        className={`flex items-center gap-2 px-3 ${pillHeight} ${pillStyle} pointer-events-auto shrink-0`}
+      >
+        <button
           onClick={() => setIsAdminMode(!isAdminMode)}
-          className={`font-semibold ${
-            !isAdminMode
-              ? "border-emerald-500 text-emerald-600 hover:bg-emerald-50"
-              : ""
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
+            isAdminMode
+              ? "bg-red-500/20 text-red-600 hover:bg-red-500/30"
+              : "bg-emerald-500/20 text-emerald-600 hover:bg-emerald-500/30"
           }`}
         >
           {isAdminMode ? (
-            <>
-              <Unlock className="h-4 w-4" />
-              {!isMobile && "Admin"}
-            </>
+            <Unlock className="h-4 w-4" />
           ) : (
-            <>
-              <Lock className="h-4 w-4" />
-              {!isMobile && "Viewer"}
-            </>
+            <Lock className="h-4 w-4" />
           )}
-        </Button>
-        <Button
-          variant="outline"
-          size={isMobile ? "sm" : "default"}
+          {!isMobile && (isAdminMode ? "Admin" : "Viewer")}
+        </button>
+        <button
           onClick={() => setIsDarkMode(!isDarkMode)}
-          className="font-semibold"
-          style={{ borderColor: LUMS_BLUE, color: LUMS_BLUE }}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-semibold transition-colors hover:bg-gray-100"
+          style={{ color: LUMS_BLUE }}
         >
           {isDarkMode ? (
-            <>
-              <Moon className="h-4 w-4" />
-              {!isMobile && "Dark"}
-            </>
+            <Moon className="h-4 w-4" />
           ) : (
-            <>
-              <Sun className="h-4 w-4" />
-              {!isMobile && "Light"}
-            </>
+            <Sun className="h-4 w-4" />
           )}
-        </Button>
+          {!isMobile && (isDarkMode ? "Dark" : "Light")}
+        </button>
       </div>
     </header>
   );
