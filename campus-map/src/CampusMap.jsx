@@ -228,6 +228,7 @@ export default function CampusMap() {
           setIsSearchFocused={setIsSearchFocused}
           availableBuildings={availableBuildings}
           setSelectedBuildingId={setSelectedBuildingId}
+          activePanel={activePanel}
           setActivePanel={setActivePanel}
           setIsEditingFloorplan={setIsEditingFloorplan}
           mapRef={mapRef}
@@ -241,7 +242,11 @@ export default function CampusMap() {
 
         {/* PANELS */}
         <div
-          className={`absolute ${isMobile ? "bottom-0 left-0 right-0" : "top-[80px] left-4"} z-10 flex flex-col gap-4 pointer-events-none`}
+          className={`absolute ${
+            isMobile
+              ? "bottom-0 left-0 right-0 flex-col-reverse p-4"
+              : "top-[80px] left-4 flex-col"
+          } z-10 flex gap-4 pointer-events-none`}
         >
           {/* Controls Panel */}
           {(!isMobile || activePanel === "controls") && (
@@ -268,7 +273,10 @@ export default function CampusMap() {
                 navEndId={navEndId}
                 setNavEndId={setNavEndId}
                 isNavigating={isNavigating}
-                startNavigation={startNavigation}
+                startNavigation={() => {
+                  startNavigation();
+                  setActivePanel(null);
+                }}
                 resetNavigation={resetNavigation}
                 routeGeoJSON={routeGeoJSON}
                 availableBuildings={availableBuildings}
@@ -297,6 +305,24 @@ export default function CampusMap() {
               />
             </div>
           )}
+
+          {/* Mobile Logo - Placed here to stack above panels in flex-col-reverse */}
+          {isMobile && (
+            <div className="pointer-events-auto self-start">
+              <div className="flex items-center gap-2 px-3 h-12 bg-white border border-gray-200 shadow-lg rounded-xl">
+                <img src={lumsLogo} alt="LUMS" className="h-7 w-auto" />
+                <h1
+                  className="m-0 text-base font-extrabold tracking-tight"
+                  style={{
+                    color: "#1e3a8a",
+                    fontFamily: "'Inter', system-ui, sans-serif",
+                  }}
+                >
+                  Naqshah
+                </h1>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Mobile: Floating Action Buttons */}
@@ -312,9 +338,14 @@ export default function CampusMap() {
               zIndex: 40,
             }}
           >
-            <button onClick={() => setActivePanel("controls")} style={fabStyle}>
-              <Settings size={24} />
-            </button>
+            {isAdminMode && (
+              <button
+                onClick={() => setActivePanel("controls")}
+                style={fabStyle}
+              >
+                <Settings size={24} />
+              </button>
+            )}
             <button
               onClick={() => setActivePanel("nav")}
               style={{

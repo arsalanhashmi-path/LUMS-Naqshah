@@ -20,6 +20,7 @@ export default function Navbar({
   availableBuildings,
   setSelectedBuildingId,
   setActivePanel,
+  activePanel,
   setIsEditingFloorplan,
   mapRef,
   lumsLogo,
@@ -140,22 +141,6 @@ export default function Navbar({
             </button>
           </div>
         </header>
-
-        {/* Bottom Left: Logo + Title */}
-        <div
-          className={`absolute bottom-4 left-4 flex items-center gap-2 px-3 ${pillHeight} ${pillStyle} z-[100] pointer-events-auto`}
-        >
-          <img src={lumsLogo} alt="LUMS" className="h-7 w-auto" />
-          <h1
-            className="m-0 text-base font-extrabold tracking-tight"
-            style={{
-              color: LUMS_BLUE,
-              fontFamily: "'Inter', system-ui, sans-serif",
-            }}
-          >
-            Naqshah
-          </h1>
-        </div>
       </>
     );
   }
