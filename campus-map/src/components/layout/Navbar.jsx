@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, X, Building2, Lock, Unlock, Moon, Sun } from "lucide-react";
+import { getCentroid } from "../../pathfinding";
 
 const LUMS_BLUE = "#1e3a8a";
 
@@ -19,6 +20,7 @@ export default function Navbar({
   availableBuildings,
   setSelectedBuildingId,
   setActivePanel,
+  setIsEditingFloorplan,
   mapRef,
   lumsLogo,
 }) {
@@ -75,14 +77,17 @@ export default function Navbar({
                       key={b.properties["@id"]}
                       onClick={() => {
                         setSelectedBuildingId(b.properties["@id"]);
-                        setActivePanel("building");
-                        const centroid = b.geometry.coordinates[0][0];
-                        mapRef.current?.easeTo({
-                          center: centroid,
-                          zoom: 18,
-                          pitch: 45,
-                          duration: 1000,
-                        });
+                        setIsEditingFloorplan(true);
+
+                        const centroid = getCentroid(b);
+                        if (centroid) {
+                          mapRef.current?.easeTo({
+                            center: centroid,
+                            zoom: 18,
+                            pitch: 45,
+                            duration: 1000,
+                          });
+                        }
                         setSearchQuery("");
                         setIsSearchFocused(false);
                       }}
@@ -214,14 +219,17 @@ export default function Navbar({
                   key={b.properties["@id"]}
                   onClick={() => {
                     setSelectedBuildingId(b.properties["@id"]);
-                    setActivePanel("building");
-                    const centroid = b.geometry.coordinates[0][0];
-                    mapRef.current?.easeTo({
-                      center: centroid,
-                      zoom: 18,
-                      pitch: 45,
-                      duration: 1000,
-                    });
+                    setIsEditingFloorplan(true);
+
+                    const centroid = getCentroid(b);
+                    if (centroid) {
+                      mapRef.current?.easeTo({
+                        center: centroid,
+                        zoom: 18,
+                        pitch: 45,
+                        duration: 1000,
+                      });
+                    }
                     setSearchQuery("");
                     setIsSearchFocused(false);
                   }}
