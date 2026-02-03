@@ -72,24 +72,32 @@ app.post('/api/campus', async (req, res) => {
       return res.json({ success: true, message: 'Data saved locally' });
     }
 
+    // Convert string to Buffer for Supabase upload
+    const buffer = Buffer.from(jsonString, 'utf8');
+
     // Upload to Supabase storage (upsert)
     const { error } = await supabase.storage
       .from(BUCKET_NAME)
-      .upload(FILE_NAME, jsonString, {
+      .upload(FILE_NAME, buffer, {
         contentType: 'application/json',
         upsert: true,
       });
 
     if (error) {
-      console.error('Supabase upload error:', error);
-      return res.status(500).json({ error: 'Failed to save data to storage' });
+      console.error('Supabase upload error:', JSON.stringify(error, null, 2));
+      return res.status(500).json({ 
+        error: 'Failed to save data to storage',
+        details: error.message || error,
+        bucket: BUCKET_NAME,
+        file: FILE_NAME
+      });
     }
 
     console.log('Campus data saved to Supabase.');
     res.json({ success: true, message: 'Data saved to Supabase' });
   } catch (err) {
     console.error('Error saving campus data:', err);
-    res.status(500).json({ error: 'Failed to save data' });
+    res.status(500).json({ error: 'Failed to save data', details: err.message });
   }
 });
 
